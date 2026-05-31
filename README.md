@@ -2,6 +2,8 @@
 
 An Android app that connects to your AWS account, browses your S3 buckets, and uploads/downloads files (images, docs, videos) with in-app preview and background transfers.
 
+> 📄 [One-pager overview](docs/CloudShelf-one-pager.pdf)
+
 - **Package:** `com.mobildroid.cloudshelf.app`
 - **Min SDK:** 26 (Android 8.0)
 - **Target SDK:** 34
