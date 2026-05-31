@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base theme: Compose owns colors at runtime via CloudShelfTheme.
+         This XML theme exists so the activity has a valid theme attribute
+         before Compose takes over (splash, edge-to-edge, status bar). -->
+    <style name="Theme.CloudShelf" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

@@ -1,0 +1,38 @@
+# Built application files
+*.apk
+*.aar
+*.aab
+*.ap_
+*.dex
+
+# Gradle
+.gradle/
+build/
+out/
+.kotlin/
+
+# Local config (signing keys, SDK path)
+local.properties
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.iws
+captures/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Amplify backend artifacts that shouldn't be public (override per-repo policy)
+amplify/backend/awscloudformation/
+amplify/backend/amplify-meta.json
+amplify/team-provider-info.json
+
+# Keystores (NEVER commit)
+*.jks
+*.keystore
+keystore.properties

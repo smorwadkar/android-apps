@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CloudShelf</string>
+
+    <!-- Sign in -->
+    <string name="sign_in_title">Sign in to CloudShelf</string>
+    <string name="sign_in_tab_cognito">Account</string>
+    <string name="sign_in_tab_iam">Advanced (IAM key)</string>
+    <string name="sign_in_iam_warning">IAM keys are stored encrypted on this device. Cognito is recommended for production use.</string>
+
+    <!-- Common -->
+    <string name="action_continue">Continue</string>
+    <string name="action_back">Back</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_sign_out">Sign out</string>
+
+    <!-- Screens -->
+    <string name="screen_buckets">Your S3 buckets</string>
+    <string name="screen_browser">Browser</string>
+    <string name="screen_preview">Preview</string>
+    <string name="screen_transfers">Transfers</string>
+    <string name="screen_settings">Settings</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_transfers">File transfers</string>
+    <string name="notification_channel_transfers_desc">Progress for uploads and downloads.</string>
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Controls Android 12+ device-to-device transfer + cloud backup. Same exclusions as backup_rules. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="cloudshelf_secure_prefs.xml" />
+        <exclude domain="database" path="cloudshelf_db" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="cloudshelf_secure_prefs.xml" />
+        <exclude domain="database" path="cloudshelf_db" />
+    </device-transfer>
+</data-extraction-rules>

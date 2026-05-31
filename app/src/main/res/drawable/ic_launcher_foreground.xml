@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!--
+        Skybox mark (Material refined, option U): a white cloud at the top,
+        an amber folder with a peek of cream paper in the middle, and two
+        slim white upload chevrons flanking the folder.
+
+        Geometry stays inside the 66dp safe zone (x: 21–87, y: 21–87) so
+        adaptive masks (round / squircle / teardrop) won't crop anything.
+    -->
+
+    <!-- ============== Cloud (top, white) ============== -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 30,40 C 22,40 20,32 26,28 C 26,20 36,18 40,24 C 44,16 56,16 60,24 C 66,18 78,22 76,30 C 84,30 84,40 76,40 Z" />
+
+    <!-- ============== Folder (middle) ============== -->
+
+    <!-- Tab (darker amber, Orange 600). Slight inset on the right so it
+         reads as a labeled folder tab, not a full-width plank. -->
+    <path
+        android:fillColor="#FB8C00"
+        android:pathData="M 34,52 L 50,52 Q 52,52 52,54 L 52,58 L 32,58 L 32,54 Q 32,52 34,52 Z" />
+
+    <!-- Body (Orange 400). Rounded corners give the Material softness. -->
+    <path
+        android:fillColor="#FFA726"
+        android:pathData="M 34,58 L 74,58 Q 76,58 76,60 L 76,82 Q 76,84 74,84 L 34,84 Q 32,84 32,82 L 32,60 Q 32,58 34,58 Z" />
+
+    <!-- Paper sliver peeking out the top of the folder, cream. -->
+    <path
+        android:fillColor="#FFF8E1"
+        android:pathData="M 34,60 L 74,60 L 74,63 L 34,63 Z" />
+
+    <!-- ============== Upload chevrons (flanking the folder) ============== -->
+
+    <!-- Left arrow -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 22,52 L 26,46 L 30,52 L 28,52 L 28,68 L 24,68 L 24,52 Z" />
+
+    <!-- Right arrow -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 78,52 L 82,46 L 86,52 L 84,52 L 84,68 L 80,68 L 80,52 Z" />
+</vector>

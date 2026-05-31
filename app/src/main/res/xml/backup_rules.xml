@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Never back up the encrypted credentials file. Even though it's encrypted at rest,
+         backing it up to another device's account is a credential-exfil path we don't want. -->
+    <exclude domain="sharedpref" path="cloudshelf_secure_prefs.xml" />
+    <exclude domain="database" path="cloudshelf_db" />
+</full-backup-content>
