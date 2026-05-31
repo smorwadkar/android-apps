@@ -129,10 +129,6 @@ dependencies {
     implementation(libs.aws.s3)
     implementation(libs.aws.sts)
 
-    // Amplify (Cognito Auth)
-    implementation(libs.amplify.core.kotlin)
-    implementation(libs.amplify.auth.cognito)
-
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 

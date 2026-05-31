@@ -56,7 +56,7 @@ Output lands in `app/build/outputs/bundle/playStoreRelease/` and `app/build/outp
 
 What works:
 
-- **Sign in** via Cognito or IAM keys (Phase 1).
+- **Sign in** via IAM keys (BYOK).
 - **Browse** real S3 buckets across regions with breadcrumbs, sort, search-in-prefix, and infinite scroll (Phase 2).
 - **Upload** any file you pick from Storage Access Framework (the FAB on the Browser screen). Files ≥ 8 MB use S3 multipart upload with 4 concurrent 8 MB parts. SSE-S3 (`AES256`) is set on every PUT and CreateMultipartUpload. Killing the app mid-upload preserves the `uploadId` in Room; when WorkManager retries, `ListParts` finds completed parts and resumes.
 - **Download** any object via the trailing arrow icon on each file row. The downloaded file lands in app-private storage (`cacheDir/downloads/`). On retry, the worker uses `Range: bytes=N-` to resume from the last successfully-written byte.
@@ -85,45 +85,11 @@ s3:ListMultipartUploadParts
 
 ## Current status — Phase 1 (auth)
 
-The app signs in via either:
+The app signs in via **IAM access key + secret + optional session token + region**. Keys are validated via `sts:GetCallerIdentity` before being stored, and saved with `EncryptedSharedPreferences` (Android Keystore-backed). Cognito was removed as a future-scope feature.
 
-1. **Cognito** — email + password (Amplify Auth). Requires `amplifyconfiguration.json` from `amplify init` + `amplify add auth`. Until you run those, the Cognito tab is disabled at runtime with a friendly message and the IAM-key tab works fine.
-2. **IAM access key + secret + optional session token + region**. Keys are validated via `sts:GetCallerIdentity` before being stored, and saved with `EncryptedSharedPreferences` (Android Keystore-backed).
+Sign-out from Settings clears the stored keys and returns to the SignIn screen.
 
-Sign-out from Settings clears both paths and returns to the SignIn screen.
-
-### Set up Cognito (optional, one-time)
-
-From the project root:
-
-```bash
-# 1. Install the Amplify CLI once (Node 18+ required):
-npm install -g @aws-amplify/cli
-
-# 2. Configure with an AWS profile that can create Cognito + IAM:
-amplify configure
-
-# 3. Initialize the backend for this project:
-amplify init
-#   - choose: android
-#   - res directory: app/src/main/res
-
-# 4. Add Cognito (User Pool + Identity Pool, email sign-in):
-amplify add auth
-#   - default config with username = email
-#   - "No, I am done." for advanced settings unless you want MFA
-
-# 5. Push to AWS (creates the Cognito pools and IAM roles):
-amplify push
-```
-
-After `amplify push` you'll have `app/src/main/res/raw/amplifyconfiguration.json`. Re-run the app — the Cognito tab is now active.
-
-### IAM policy for the Cognito authenticated role
-
-Attach the §4b policy from `CloudShelf-Plan.md` to the Cognito authenticated role that `amplify push` created. Edit your bucket ARN into the `Resource` array first.
-
-### IAM policy for direct-key users
+### IAM policy
 
 Same policy. Create an IAM user in the AWS console, attach the policy, generate an access key + secret, paste them into the IAM-key tab in the app.
 
@@ -181,7 +147,7 @@ Add a `keystore.properties` file (gitignored) and a `signingConfigs` block in `a
 
 ```
 app/src/main/java/com/mobildroid/cloudshelf/app/
-    auth/         # Phase 1 — Cognito + IAM-key sign-in
+    auth/         # IAM-key sign-in (BYOK)
     buckets/      # Phase 2 — list buckets, region badges
     browser/      # Phase 2 — prefix navigation, sort, search
     transfer/     # Phase 3 — UploadWorker / DownloadWorker, queue UI
@@ -197,7 +163,7 @@ app/src/main/java/com/mobildroid/cloudshelf/app/
 
 ## What's intentionally NOT in this scaffold
 
-- `amplifyconfiguration.json` — generated in Phase 1 by `amplify init && amplify add auth`.
+- `amplifyconfiguration.json` — Cognito config, removed (future-scope).
 - Real `S3Client` wiring — Phase 1 introduces `S3ClientProvider` keyed by region.
 - WorkManager workers — Phase 3.
 - Signing keystore — set up locally before release builds.

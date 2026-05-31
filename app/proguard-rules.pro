@@ -11,11 +11,6 @@
 -keepclassmembers class aws.sdk.kotlin.** { *; }
 -keepclassmembers class aws.smithy.kotlin.** { *; }
 
-# --- Amplify (Cognito Auth) ---
--keep class com.amplifyframework.** { *; }
--keep class com.amazonaws.** { *; }
--dontwarn com.amazonaws.**
-
 # --- Coroutines internal classes referenced via reflection in stack traces ---
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
 -keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}

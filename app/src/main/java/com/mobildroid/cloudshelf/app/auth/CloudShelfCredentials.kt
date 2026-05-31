@@ -2,12 +2,10 @@ package com.mobildroid.cloudshelf.app.auth
 
 /**
  * Lightweight, in-memory representation of the user's AWS identity within the app.
- * Persistence and refresh logic live in:
- *   - [IamKeyStore] for the IAM-key path (EncryptedSharedPreferences),
- *   - Amplify's own session cache for the Cognito path.
+ * Persistence lives in [IamKeyStore] (EncryptedSharedPreferences).
  *
  * Code outside the auth package should depend on this sealed type, NOT on
- * Amplify or raw IAM types directly.
+ * raw IAM types directly.
  */
 sealed interface CloudShelfCredentials {
 
@@ -16,19 +14,6 @@ sealed interface CloudShelfCredentials {
 
     /** A human-readable identifier shown in UI (email, IAM user ARN tail, etc.). */
     val displayName: String
-
-    /**
-     * Credentials federated through Cognito User Pool + Identity Pool.
-     * The actual key/secret/session token are fetched lazily from Amplify
-     * each time S3 needs them (Amplify refreshes automatically).
-     */
-    data class Cognito(
-        val identityId: String,
-        val email: String?,
-        override val defaultRegion: String
-    ) : CloudShelfCredentials {
-        override val displayName: String get() = email ?: identityId
-    }
 
     /**
      * Long-lived IAM access key entered by the user.

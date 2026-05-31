@@ -27,7 +27,7 @@
 ┌────────────────────────────▼─────────────────────────────────────┐
 │  Data sources                                                    │
 │  · AWS SDK for Kotlin (S3, STS)  via S3ClientProvider            │
-│  · Amplify Auth (Cognito, optional)                              │
+│  · Amplify Auth (Cognito, future-scope)                             │
 │  · WorkManager (UploadWorker, DownloadWorker)                    │
 │  · Room (TransferEntity, BucketRegionCache)                      │
 │  · DataStore (UserPreferences — theme, non-secret prefs)         │
@@ -51,11 +51,10 @@ com.mobildroid.cloudshelf.app
 ├── CloudShelfApplication           # Application — provides WorkerFactory for Hilt + WorkManager
 ├── MainActivity                    # Compose host
 ├── auth/
-│   ├── AmplifyInitializer          # Best-effort Cognito wiring; no-op if config absent
-│   ├── AuthRepository              # Bridges BYOK + Cognito to a single AuthState
+│   ├── AuthRepository              # BYOK auth state machine
 │   ├── AuthViewModel               # Sign-in screen state
 │   ├── AwsCredentialsProviderFactory  # ⭐ the credential seam
-│   ├── CloudShelfCredentials       # Sealed type — IAM or Cognito
+│   ├── CloudShelfCredentials       # Credential data class
 │   ├── IamKeyStore                 # EncryptedSharedPreferences wrapper
 │   ├── SignInScreen
 │   └── StsValidator                # sts:GetCallerIdentity probe before saving keys

@@ -34,7 +34,7 @@ CloudShelf is the missing piece: a polished, native Android client that talks di
 - **Primary persona — "AWS-savvy individual."** Owns one or more AWS accounts. Already stores files in S3 (backups, photos, raw video, project archives). Comfortable creating an IAM user and pasting an access key on first launch. Wants S3 access from their phone without paying for a SaaS middleman.
 - **Secondary persona — "Small-team operator."** Same skill profile, but the bucket is a shared team archive. Uses CloudShelf to grab a file on the road or upload from the field.
 
-Explicitly **not** the target: non-technical end-consumers who would balk at IAM. They are the right audience for the optional Cognito path (kept in the codebase but not promoted — see §6).
+Explicitly **not** the target: non-technical end-consumers who would balk at IAM. Cognito integration is a future-scope item (see §6) if this audience becomes a priority.
 
 ## 3. Goals and non-goals
 
@@ -59,7 +59,7 @@ Explicitly **not** the target: non-technical end-consumers who would balk at IAM
 - Built-in zip/archive handling beyond what the OS provides.
 
 ### Stretch (v2, out of scope here)
-Pre-signed share UI overhaul, favorites + offline cache, move/copy across prefixes/buckets, bulk operations, thumbnail grid view, camera-capture upload, storage-class awareness, object versioning, metadata viewer, biometric app-lock, multi-cloud (Wasabi / R2 / MinIO / B2 — already architected for, see §7).
+Pre-signed share UI overhaul, favorites + offline cache, move/copy across prefixes/buckets, bulk operations, thumbnail grid view, camera-capture upload, storage-class awareness, object versioning, metadata viewer, biometric app-lock, multi-cloud (Wasabi / R2 / MinIO / B2 — already architected for, see §7). Cognito auth (removed from codebase, re-add if needed).
 
 ## 4. User stories (v1)
 
@@ -77,7 +77,7 @@ Pre-signed share UI overhaul, favorites + offline cache, move/copy across prefix
 | # | Feature | State | Notes |
 |---|---|---|---|
 | F1 | IAM-key sign-in (BYOK) | ✅ Shipping | `AuthRepository`, `IamKeyStore`, `StsValidator` |
-| F2 | Cognito sign-in (optional) | ⚠️ Gated | Only active when `amplifyconfiguration.json` is present locally — never committed |
+| F2 | Cognito sign-in (optional) | ❌ Removed | Future-scope feature; removed from codebase |
 | F3 | Bucket list with region badges | ✅ Shipping | `BucketsScreen`, `BucketRegionCache` (Room) |
 | F4 | Prefix browser, breadcrumbs, sort, search | ✅ Shipping | `BrowserScreen` |
 | F5 | Pagination via continuation tokens | ✅ Shipping | `S3Repository.listPage(...)` |
@@ -103,26 +103,13 @@ Pre-signed share UI overhaul, favorites + offline cache, move/copy across prefix
 
 ## 6. Authentication
 
-CloudShelf's primary auth model is **IAM-key (BYOK)** — the user pastes their own AWS access key, secret, and region. Cognito is supported as an optional secondary path but is not promoted. Full rationale: `../TODO/cognito-auth/decision.md`.
+CloudShelf uses **IAM-key (BYOK)** as its auth model — the user pastes their own AWS access key, secret, and region. Cognito was previously implemented and removed; it remains a future-scope option if needed later. Full rationale: `../TODO/cognito-auth/decision.md`.
 
-### Path A — IAM key (default)
+### IAM key (only path)
 1. User enters access key ID + secret + optional session token + default region.
 2. App calls `sts:GetCallerIdentity` to validate.
 3. On success, credentials encrypt via `EncryptedSharedPreferences` (Android Keystore backed) in `IamKeyStore`.
 4. `AwsCredentialsProviderFactory` wraps them in `StaticCredentialsProvider` for the S3 client.
-
-### Path B — Cognito (secondary, only if `amplifyconfiguration.json` exists)
-1. `AmplifyInitializer.tryInitialize()` is best-effort; absent config silently disables the tab.
-2. User signs in via Amplify Auth (email/password).
-3. Amplify federates STS via the Identity Pool to produce short-lived credentials.
-4. Same `AwsCredentialsProviderFactory` bridge serves them to the S3 client.
-
-The rest of the app is auth-agnostic — both paths converge in `CloudShelfCredentials`.
-
-**Rules:**
-- `amplifyconfiguration.json` is **never committed** (see `CloudShelfApp/.gitignore`).
-- `AuthViewModel.UiState.tab` defaults to `Tab.IamKey`.
-- `SignInScreen` leads with the IAM-key form.
 
 ## 7. Architecture (summary)
 
@@ -131,7 +118,7 @@ Full version: `ARCHITECTURE.md`.
 ```
 UI (Compose) → ViewModel (Hilt) → Repository → Data sources
                                                    ├── AWS SDK for Kotlin (S3 + STS)
-                                                   ├── Amplify Auth (Cognito, optional)
+                                                    ├── Amplify Auth (Cognito, future-scope)
                                                    ├── WorkManager (transfers)
                                                    ├── Room (transfer + region cache)
                                                    ├── DataStore (theme + non-secret prefs)
@@ -143,7 +130,7 @@ Key invariants:
 - **Every AWS SDK call runs on `Dispatchers.IO`.** The Kotlin SDK's HTTP engine cleans up sockets on the calling thread; without `withContext(Dispatchers.IO)` you get `NetworkOnMainThreadException`. Honored in `S3Repository`, `StsValidator`, `S3ClientProvider`.
 - **One `S3Client` per region**, cached by `S3ClientProvider` and keyed off `BucketRegionCache` (persisted in Room).
 - **`GetBucketLocation` quirks are normalized.** `us-east-1` returns null/empty; `eu-west-1` historically returned `"EU"`. Both are mapped to canonical region codes in `S3Repository.getBucketRegion`.
-- **The credential abstraction is the only seam.** Anything below `S3Repository` knows nothing about Cognito vs IAM. This is what keeps the BYOK / Cognito choice reversible and makes multi-cloud (R2, Wasabi, B2, MinIO) a host/endpoint change rather than a rewrite.
+- **The credential abstraction is the only seam.** Anything below `S3Repository` knows nothing about credential source. This is what makes multi-cloud (R2, Wasabi, B2, MinIO) a host/endpoint change rather than a rewrite.
 
 ## 8. Data model
 
@@ -227,7 +214,7 @@ Document this in onboarding. Least-privilege template:
 | Orphan multipart uploads after permanent failure | Mitigated | `AbortMultipartUpload` called when WorkManager exhausts retries |
 | Doze mode pausing transfers | Mitigated | Foreground service + `FOREGROUND_SERVICE_DATA_SYNC` |
 | `EncryptedSharedPreferences` is deprecated | Open | Plan migration to a Keystore-backed wrapper over DataStore once an official replacement is recommended |
-| Cognito tab drift if `amplifyconfiguration.json` gets committed by mistake | Mitigated | Gitignored; tested by `AmplifyInitializer.tryInitialize` returning false when absent |
+| Cognito re-addition introduces `amplifyconfiguration.json` commit risk | Mitigated | Gitignored; future-scope only |
 | No client-side encryption | Accepted | SSE-S3 covers the target user; revisit if a regulated-industry persona appears |
 
 ## 14. Out-of-scope decisions (already settled)
@@ -235,7 +222,7 @@ Document this in onboarding. Least-privilege template:
 - **No iOS / no web** — Kotlin Multiplatform considered for v3; not now.
 - **No SaaS backend** — pure client app; user owns the storage.
 - **No team mode** — single-account, single-user per install.
-- **Cognito stays in the tree** — useful reference implementation and validates the credential abstraction; deletion considered after six months of zero adoption signals.
+- **Cognito was removed** — cleaned out in May 2026. Re-add via the `AwsCredentialsProviderFactory` seam if needed later.
 
 ## 15. Glossary
 

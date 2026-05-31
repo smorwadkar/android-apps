@@ -169,26 +169,13 @@ If any of those fail, see §6 below.
 
 ---
 
-## 5. (Optional) Enable the Cognito sign-in tab
+## 5. (Future) Re-enable Cognito sign-in
 
-CloudShelf's primary auth model is BYOK (IAM keys). The Cognito tab is **gated off by default** — read [`../TODO/cognito-auth/decision.md`](../TODO/cognito-auth/decision.md) for why before enabling it.
-
-If you do want it enabled locally:
-
-```bash
-# From the CloudShelfApp/ directory
-npm install -g @aws-amplify/cli      # one-time, Node 18+
-amplify configure                    # one-time, choose a profile with Cognito + IAM perms
-amplify init                         # framework: android, res dir: app/src/main/res
-amplify add auth                     # email sign-in, default config
-amplify push                         # creates the Cognito pools + IAM roles
-```
-
-`amplify push` writes `app/src/main/res/raw/amplifyconfiguration.json`. The next app launch enables the Cognito tab automatically.
-
-> ⚠️ **Do not commit `amplifyconfiguration.json`.** It is gitignored. Committing it would silently enable Cognito for everyone who clones the repo.
-
-Attach the §1b policy to the Cognito authenticated role that `amplify push` created.
+Cognito was removed from the codebase in May 2026. If you need it back:
+1. Restore the Amplify dependencies in `app/build.gradle.kts` and `gradle/libs.versions.toml`.
+2. Recreate `AmplifyInitializer.kt` and add the Cognito form to `SignInScreen`.
+3. The credential seam (`AwsCredentialsProviderFactory`) is ready for it.
+4. See [`../TODO/cognito-auth/decision.md`](../TODO/cognito-auth/decision.md) for the original design and rationale.
 
 ---
 

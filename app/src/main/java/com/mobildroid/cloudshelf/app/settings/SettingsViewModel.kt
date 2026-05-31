@@ -54,13 +54,13 @@ class SettingsViewModel @Inject constructor(
     val messages: SharedFlow<String> = _messages.asSharedFlow()
 
     init {
-        // Identity (Cognito / IAM) → UiState
+        // Identity → UiState
         viewModelScope.launch {
             authRepository.state.collect { auth ->
                 val (label, detail) = when (auth) {
-                    is AuthRepository.AuthState.SignedIn -> when (val c = auth.credentials) {
-                        is CloudShelfCredentials.Cognito -> "Cognito" to (c.email ?: c.identityId)
-                        is CloudShelfCredentials.IamKey -> "IAM key" to (c.arn ?: c.accessKeyId)
+                    is AuthRepository.AuthState.SignedIn -> {
+                        val c = auth.credentials as CloudShelfCredentials.IamKey
+                        "IAM key" to (c.arn ?: c.accessKeyId)
                     }
                     else -> "Signed out" to null
                 }

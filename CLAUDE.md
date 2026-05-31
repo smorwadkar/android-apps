@@ -65,12 +65,10 @@ CloudShelf/                          (parent — design docs and history live he
 
 These are not preferences. They are decisions that have already been made and that the code is shaped around. Changing them is a strategic move that requires explicit go-ahead from the owner.
 
-### 3a. BYOK (IAM keys) is the primary auth model — not Cognito
-- Full rationale: [`../TODO/cognito-auth/decision.md`](../TODO/cognito-auth/decision.md). Read this before touching anything in `auth/`.
-- `AuthViewModel.UiState.tab` **must** default to `Tab.IamKey`.
-- `SignInScreen` leads with the IAM-key form.
-- The Cognito path stays in the tree as an optional / reversibility net. Don't delete it.
-- **Never commit `app/src/main/res/raw/amplifyconfiguration.json`.** It is gitignored. Committing it would silently flip Cognito on for everyone.
+### 3a. IAM-key (BYOK) is the only auth path
+- Cognito was removed from the codebase. It is a future-scope feature if needed later.
+- `SignInScreen` shows only the IAM-key form — no tabs.
+- **Never commit `app/src/main/res/raw/amplifyconfiguration.json`.** It is gitignored.
 
 ### 3b. Every AWS SDK for Kotlin call runs on `Dispatchers.IO`
 This is non-negotiable. The Kotlin SDK's HTTP engine does synchronous socket cleanup on the calling thread; running it on the main thread throws `NetworkOnMainThreadException` (also happens on lifecycle paths where the dispatcher defaults to `Dispatchers.Main`). Every public method on `S3Repository`, `StsValidator`, and `S3ClientProvider` wraps its body in `withContext(Dispatchers.IO) { ... }`. When you add a new SDK call, do the same.
@@ -78,7 +76,7 @@ This is non-negotiable. The Kotlin SDK's HTTP engine does synchronous socket cle
 (Auto-memory entry `feedback_aws_sdk_dispatcher.md` captures this rule for AI context across sessions.)
 
 ### 3c. The credential abstraction is the seam
-`AwsCredentialsProviderFactory` + the `CloudShelfCredentials` sealed type are what let the BYOK / Cognito choice stay reversible. Everything below `S3Repository` is auth-agnostic. **Don't leak Amplify or Cognito types into `data/`, `transfer/`, `preview/`, or anywhere else.** If you find yourself importing `com.amplifyframework.*` outside `auth/`, stop.
+`AwsCredentialsProviderFactory` + the `CloudShelfCredentials` sealed type centralize credential resolution. Everything below `S3Repository` is auth-agnostic.
 
 ### 3d. One `S3Client` per region, cached in `S3ClientProvider`
 Bucket region is resolved via `GetBucketLocation`, normalized for the `us-east-1` (null) and `eu-west-1` (`"EU"`) quirks, and cached in Room (`BucketRegionCache`). Don't construct ad-hoc `S3Client` instances elsewhere.
@@ -131,7 +129,7 @@ See `ONBOARDING.md` for AWS-side prerequisites (IAM user + policy + key generati
 ## 6. Things that look broken but aren't
 
 - `gradlew` / `gradlew.bat` / `gradle/wrapper/gradle-wrapper.jar` are **not** checked in. Run `gradle wrapper --gradle-version 8.9` once after cloning, or open the project in Android Studio and it'll generate them.
-- The Cognito sign-in tab is **disabled at runtime** when `amplifyconfiguration.json` is missing. That is the intended default — see 3a.
+- **Cognito removed** — intentionally stripped; may return as a future-scope feature.
 - Release builds without `keystore.properties` produce an unsigned AAB. Debug builds are unaffected.
 - WorkManager's auto-initialization is turned off in `AndroidManifest.xml` (a `<provider>` `tools:node="remove"`) — that is intentional: Hilt provides the `WorkerFactory` via `CloudShelfApplication: Configuration.Provider`.
 
@@ -143,7 +141,7 @@ See `ONBOARDING.md` for AWS-side prerequisites (IAM user + policy + key generati
 
 **"Add a new permission"** → don't, if you can avoid it. The manifest is deliberately minimal. If you must, document the user-facing rationale alongside the manifest entry and update `SPEC.md` §9.
 
-**"Touch the auth flow"** → read `../TODO/cognito-auth/decision.md` first. Default to changing the BYOK path; preserve the Cognito path.
+**"Touch the auth flow"** → the only path is IAM-key (BYOK). If re-adding Cognito in the future, read `../TODO/cognito-auth/decision.md` first.
 
 **"Run a release build"** → see `README.md` "Generate a release signing key" section. Never check `keystore.properties` or any `.jks` / `.keystore` file into the repo.
 
@@ -154,8 +152,7 @@ See `ONBOARDING.md` for AWS-side prerequisites (IAM user + policy + key generati
 - ❌ Don't construct ad-hoc `S3Client` instances — go through `S3ClientProvider`.
 - ❌ Don't log credentials, signed URLs, or request/response bodies.
 - ❌ Don't add `READ/WRITE_EXTERNAL_STORAGE`. Use SAF / Photo Picker.
-- ❌ Don't import `com.amplifyframework.*` outside the `auth/` package.
-- ❌ Don't change `AuthViewModel.UiState.tab` default away from `Tab.IamKey` without re-litigating the ADR.
+- ❌ Don't import `com.amplifyframework.*` (Cognito dependency was removed; if re-added, keep it confined to `auth/`).
 - ❌ Don't disable `isMinifyEnabled` in `release` to chase a ProGuard error — fix the rules in `proguard-rules.pro` instead.
 
 ## 9. Cross-document map
@@ -165,7 +162,7 @@ See `ONBOARDING.md` for AWS-side prerequisites (IAM user + policy + key generati
 - **How to get a working build on a new machine** → `ONBOARDING.md`
 - **How to contribute changes back** → `CONTRIBUTING.md`
 - **Current shipping status / quick commands** → `README.md`
-- **Why BYOK over Cognito** → `../TODO/cognito-auth/decision.md`
+- **Cognito auth (removed, future-scope)** → `../TODO/cognito-auth/decision.md`
 - **Original brainstorm + phase plan** → `../CloudShelf-Plan.md`
 
 ## 10. When you're stuck

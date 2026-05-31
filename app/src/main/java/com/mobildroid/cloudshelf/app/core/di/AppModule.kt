@@ -9,15 +9,7 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * Top-level Hilt module. Phase 1+ adds:
- *   - S3ClientProvider (per-region cached aws.sdk.kotlin.services.s3.S3Client)
- *   - CredentialsProvider (Cognito-backed or IAM-key-backed)
- *   - AuthRepository, S3Repository, TransferRepository
- *   - Room database
- *   - EncryptedSharedPreferences wrapper for IAM credential storage
- *
- * Kept intentionally thin in Phase 0 so the Hilt graph compiles with only
- * what the navigation skeleton needs.
+ * Top-level Hilt module.
  */
 @Module
 @InstallIn(SingletonComponent::class)

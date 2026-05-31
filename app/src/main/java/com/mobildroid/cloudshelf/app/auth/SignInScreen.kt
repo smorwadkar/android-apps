@@ -24,8 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -64,24 +62,7 @@ fun SignInScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             BrandHeader()
-
-            TabRow(selectedTabIndex = if (state.tab == AuthViewModel.UiState.Tab.Cognito) 0 else 1) {
-                Tab(
-                    selected = state.tab == AuthViewModel.UiState.Tab.Cognito,
-                    onClick = { viewModel.onTabSelected(AuthViewModel.UiState.Tab.Cognito) },
-                    text = { Text("Account") }
-                )
-                Tab(
-                    selected = state.tab == AuthViewModel.UiState.Tab.IamKey,
-                    onClick = { viewModel.onTabSelected(AuthViewModel.UiState.Tab.IamKey) },
-                    text = { Text("IAM key") }
-                )
-            }
-
-            when (state.tab) {
-                AuthViewModel.UiState.Tab.Cognito -> CognitoForm(state, viewModel)
-                AuthViewModel.UiState.Tab.IamKey -> IamForm(state, viewModel)
-            }
+            IamForm(state, viewModel)
 
             state.errorMessage?.let { msg ->
                 Surface(
@@ -136,47 +117,11 @@ private fun BrandHeader() {
 }
 
 @Composable
-private fun CognitoForm(state: AuthViewModel.UiState, viewModel: AuthViewModel) {
-    if (!state.isCognitoAvailable) {
-        InfoCard(
-            title = "Cognito isn't configured yet",
-            body = "Run `amplify init` and `amplify add auth` in the project root to generate " +
-                "amplifyconfiguration.json, then rebuild. Until then, use the IAM key tab."
-        )
-        return
-    }
-    SectionSubtitle("Sign in with a Cognito User Pool account.")
-    OutlinedTextField(
-        value = state.cognitoEmail,
-        onValueChange = viewModel::onCognitoEmailChanged,
-        label = { Text("Email") },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-        modifier = Modifier.fillMaxWidth()
-    )
-    OutlinedTextField(
-        value = state.cognitoPassword,
-        onValueChange = viewModel::onCognitoPasswordChanged,
-        label = { Text("Password") },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        modifier = Modifier.fillMaxWidth()
-    )
-    SubmitButton(
-        label = "Sign in",
-        enabled = state.canSubmitCognito,
-        isSubmitting = state.isSubmitting,
-        onClick = viewModel::submitCognito
-    )
-}
-
-@Composable
 private fun IamForm(state: AuthViewModel.UiState, viewModel: AuthViewModel) {
-    SectionSubtitle("Use this for personal or admin use against your own AWS account.")
+    SectionSubtitle("Enter your AWS IAM credentials to connect to your S3 buckets.")
     InfoCard(
         title = "Your keys never leave this device.",
-        body = "They're encrypted by Android Keystore. For shared or production use, prefer Cognito."
+        body = "They're encrypted by Android Keystore."
     )
     OutlinedTextField(
         value = state.iamAccessKeyId,

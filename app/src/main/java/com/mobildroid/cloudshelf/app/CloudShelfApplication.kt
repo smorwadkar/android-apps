@@ -7,21 +7,10 @@ import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
-import com.mobildroid.cloudshelf.app.auth.AmplifyInitializer
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import javax.inject.Inject
 
-/**
- * Application entry point.
- *
- *  - Hilt is bootstrapped here via [HiltAndroidApp].
- *  - WorkManager uses a Hilt-aware [HiltWorkerFactory] so our Workers can inject
- *    repositories (S3Repository, etc.).
- *  - Amplify (Cognito) is intentionally NOT initialized here yet. Phase 1 will
- *    add `Amplify.addPlugin(AWSCognitoAuthPlugin())` + `Amplify.configure(this)`
- *    after `amplify init` produces `amplifyconfiguration.json`.
- */
 @HiltAndroidApp
 class CloudShelfApplication : Application(), Configuration.Provider, SingletonImageLoader.Factory {
 
@@ -34,9 +23,6 @@ class CloudShelfApplication : Application(), Configuration.Provider, SingletonIm
             Timber.plant(Timber.DebugTree())
         }
         Timber.i("CloudShelf starting up (flavor=%s, version=%s)", BuildConfig.FLAVOR, BuildConfig.VERSION_NAME)
-
-        // Best-effort: enables the Cognito sign-in tab if amplifyconfiguration.json is present.
-        AmplifyInitializer.tryInitialize(this)
     }
 
     override val workManagerConfiguration: Configuration
