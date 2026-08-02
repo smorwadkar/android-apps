@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * In-memory cache of region -> [S3Client].
@@ -69,6 +70,13 @@ class S3ClientProvider @Inject constructor(
         S3Client {
             this.region = region
             this.credentialsProvider = credentialsFactory.create(creds)
+            // Bound each connection so a dead/stalled network fails with a
+            // timeout instead of hanging forever (same budget as StsValidator).
+            httpClient {
+                connectTimeout = CONNECT_TIMEOUT
+                socketReadTimeout = READ_TIMEOUT
+                socketWriteTimeout = WRITE_TIMEOUT
+            }
         }
 
     private fun invalidateLocked() {
@@ -78,5 +86,8 @@ class S3ClientProvider @Inject constructor(
 
     private companion object {
         const val GLOBAL_REGION = "us-east-1"
+        val CONNECT_TIMEOUT = 10.seconds
+        val READ_TIMEOUT = 15.seconds
+        val WRITE_TIMEOUT = 15.seconds
     }
 }

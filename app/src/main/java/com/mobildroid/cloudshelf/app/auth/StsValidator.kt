@@ -6,8 +6,17 @@ import aws.sdk.kotlin.services.sts.model.GetCallerIdentityRequest
 import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
+
+/**
+ * Thrown when [StsValidator.validate] cannot get a GetCallerIdentity response
+ * within the request budget. Distinct from invalid-key errors so the UI can
+ * say "check your network" instead of "bad keys".
+ */
+class IamValidationTimeoutException(message: String) : Exception(message)
 
 /**
  * Validates raw IAM credentials by calling sts:GetCallerIdentity.
@@ -40,26 +49,48 @@ class StsValidator @Inject constructor() {
         // synchronous socket teardown on the calling thread when StsClient
         // .close() runs at the end of the `use {}` block. On Dispatchers.Main
         // that trips StrictMode's NetworkOnMainThreadException.
-        val provider = StaticCredentialsProvider(
-            Credentials(
-                accessKeyId = accessKeyId,
-                secretAccessKey = secretAccessKey,
-                sessionToken = sessionToken
+        // withTimeoutOrNull bounds the TOTAL validation — including DNS lookup,
+        // connect, and the SDK's internal retries — so a dead network surfaces
+        // as a friendly error instead of an infinite spinner. Engine timeouts
+        // below bound each individual connection attempt.
+        val validated = withTimeoutOrNull(REQUEST_TIMEOUT) {
+            val provider = StaticCredentialsProvider(
+                Credentials(
+                    accessKeyId = accessKeyId,
+                    secretAccessKey = secretAccessKey,
+                    sessionToken = sessionToken
+                )
             )
-        )
-        StsClient {
-            this.region = region
-            this.credentialsProvider = provider
-        }.use { sts ->
-            val resp = sts.getCallerIdentity(GetCallerIdentityRequest {})
-            CloudShelfCredentials.IamKey(
-                accessKeyId = accessKeyId,
-                secretAccessKey = secretAccessKey,
-                sessionToken = sessionToken,
-                accountId = resp.account,
-                arn = resp.arn,
-                defaultRegion = region
-            )
+            StsClient {
+                this.region = region
+                this.credentialsProvider = provider
+                httpClient {
+                    connectTimeout = CONNECT_TIMEOUT
+                    socketReadTimeout = READ_TIMEOUT
+                    socketWriteTimeout = WRITE_TIMEOUT
+                }
+            }.use { sts ->
+                val resp = sts.getCallerIdentity(GetCallerIdentityRequest {})
+                CloudShelfCredentials.IamKey(
+                    accessKeyId = accessKeyId,
+                    secretAccessKey = secretAccessKey,
+                    sessionToken = sessionToken,
+                    accountId = resp.account,
+                    arn = resp.arn,
+                    defaultRegion = region
+                )
+            }
         }
+        validated ?: throw IamValidationTimeoutException(
+            "Timed out contacting AWS after ${REQUEST_TIMEOUT.inWholeSeconds}s. " +
+                "Check your internet connection and try again."
+        )
+    }
+
+    private companion object {
+        val CONNECT_TIMEOUT = 10.seconds
+        val READ_TIMEOUT = 15.seconds
+        val WRITE_TIMEOUT = 15.seconds
+        val REQUEST_TIMEOUT = 15.seconds
     }
 }

@@ -59,9 +59,14 @@ class AuthViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isSubmitting = false, signedIn = true)
             }.onFailure { e ->
                 Timber.w(e, "IAM-key sign-in failed")
+                val message = when (e) {
+                    is IamValidationTimeoutException -> e.message
+                        ?: "Timed out contacting AWS. Check your internet connection and try again."
+                    else -> e.localizedMessage ?: "Could not validate those keys."
+                }
                 _uiState.value = _uiState.value.copy(
                     isSubmitting = false,
-                    errorMessage = e.localizedMessage ?: "Could not validate those keys."
+                    errorMessage = message
                 )
             }
         }
